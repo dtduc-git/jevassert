@@ -490,7 +490,7 @@ def _human_summary(
     lines.append("")
     lines.append("gates:")
     if not gates:
-        lines.append("  (none declared in pack.yaml)")
+        lines.append("  (none declared in gates.yaml)")
     for gate in gates:
         mark = "PASS" if gate.ok else ("SKIP" if gate.ok is None else "FAIL")
         lines.append(f"  {mark} {gate.gate}: {gate.detail}")
