@@ -67,4 +67,6 @@ Reconcile with SPEC was done 2026-09-19. Status:
 8. ~~Record evidence for the jev-packs registry packs~~ done 2026-09-19:
    9 packs verified (2,990 cases / 6,430 items), evidence regenerated from the
    committed recordings, jev-packs validator green.
-9. Publish: GitHub repo + push, PyPI trusted publisher, Action listing.
+9. ~~Publish: GitHub repo + push~~ done 2026-09-19; ~~PyPI trusted publisher +
+   `v0.1.0` release~~ done (PyPI `jevassert` 0.1.0, `uvx jevassert` verified).
+   Action Marketplace listing still open.

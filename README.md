@@ -1,6 +1,7 @@
 # jevassert
 
 [![CI](https://github.com/dtduc-git/jevassert/actions/workflows/ci.yml/badge.svg)](https://github.com/dtduc-git/jevassert/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/jevassert.svg)](https://pypi.org/project/jevassert/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 Regression tests for [Jev](https://typesafe.ai) question packs: assert
