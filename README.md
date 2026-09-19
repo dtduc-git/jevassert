@@ -40,7 +40,7 @@ uvx jevassert compare examples/demo-triage --a triage.jsonl --b triage-next.json
 ## Packs
 
 A pack follows **spec v0** (canonical:
-[jev-packs/SPEC.md](https://github.com/dtduc-git/jev-packs/blob/main/SPEC.md)):
+[jev-packs/SPEC.md](https://github.com/dtduc-git/jev-packs/blob/master/SPEC.md)):
 
 ```
 examples/demo-triage/
