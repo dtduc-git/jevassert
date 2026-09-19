@@ -1,0 +1,70 @@
+[project]
+name = "jevassert"
+dynamic = ["version"]
+description = "Record/replay regression tests for Jev (TypeSafe System One) question packs — accuracy, calibration and cost gates in CI."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{ name = "Duke - Duc Dinh", email = "dtduc.contact@gmail.com" }]
+keywords = [
+  "typesafe",
+  "jev",
+  "system-one",
+  "decisions",
+  "calibration",
+  "evals",
+  "testing",
+  "ci",
+  "structured-output",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Quality Assurance",
+  "Topic :: Software Development :: Testing",
+]
+dependencies = [
+  "httpx>=0.27",
+  "pyyaml>=6.0",
+]
+
+[project.scripts]
+jevassert = "jevassert.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/dtduc-git/jevassert"
+Issues = "https://github.com/dtduc-git/jevassert/issues"
+Changelog = "https://github.com/dtduc-git/jevassert/releases"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/jevassert/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jevassert"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.5",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

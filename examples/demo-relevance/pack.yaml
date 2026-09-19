@@ -1,0 +1,27 @@
+spec: 0
+id: demo-relevance
+version: 0.1.0
+license: CC0-1.0
+tested: null
+description: >-
+  Minimal example pack: judge whether a retrieved passage helps answer a
+  question and how directly. Non-goals: reranking, citation formatting.
+state:
+  description: A retrieval result — one question and one candidate passage.
+  fields: [question, passage]
+questions:
+  relevant:
+    type: noul
+    instructions: "Does `passage` contain information that helps answer `question`?"
+  support:
+    type: score
+    instructions: "How directly does `passage` help answer `question`?"
+    levels: [off_topic, background, answers, unknown]
+    level_descriptions:
+      off_topic: "The passage is unrelated to the question."
+      background: "The passage is related context, but it does not answer the question."
+      answers: "The passage directly answers the question."
+      unknown: "Cannot tell whether the passage helps."
+thresholds:
+  relevant: {true: 0.85, false: 0.85}
+  support: {off_topic: 0.7, background: 0.7, answers: 0.7}

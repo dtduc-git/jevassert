@@ -1,0 +1,52 @@
+name: jevassert
+description: >-
+  Gate accuracy, calibration and cost for Jev question packs — runs on a
+  recording made with `jevassert record`, so CI is deterministic and free.
+branding:
+  icon: check-circle
+  color: purple
+
+inputs:
+  pack:
+    description: Path to the pack directory (pack.yaml + cases.jsonl)
+    required: true
+  predictions:
+    description: Path to the predictions JSONL recorded from this pack
+    required: true
+  version:
+    description: jevassert version (or "latest")
+    required: false
+    default: latest
+  junit:
+    description: Where to write the JUnit XML summary
+    required: false
+    default: jevassert-junit.xml
+  report:
+    description: Where to write the markdown report (empty = skip)
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+    - name: Run jevassert check
+      shell: bash
+      env:
+        PACK: ${{ inputs.pack }}
+        PREDICTIONS: ${{ inputs.predictions }}
+        JUNIT: ${{ inputs.junit }}
+        REPORT: ${{ inputs.report }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        if [ "$VERSION" = "latest" ]; then
+          package="jevassert"
+        else
+          package="jevassert@$VERSION"
+        fi
+        args=(check "$PACK" -p "$PREDICTIONS" --junit "$JUNIT")
+        if [ -n "$REPORT" ]; then
+          args+=(--report "$REPORT")
+        fi
+        uvx "$package" "${args[@]}"

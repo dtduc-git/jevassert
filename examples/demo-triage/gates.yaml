@@ -1,0 +1,2 @@
+min_accuracy: 0.8
+max_ece: 0.25

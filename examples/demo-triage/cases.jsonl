@@ -1,0 +1,10 @@
+{"id": "dt-001", "state": {"message": "I was charged twice for the same order. I need the extra charge refunded today."}, "expect": {"refund_request": true, "queue": "billing", "urgency": "high"}}
+{"id": "dt-002", "state": {"message": "URGENT: production is down and none of our team can log in since this morning."}, "expect": {"refund_request": false, "queue": "technical", "urgency": "high"}}
+{"id": "dt-003", "state": {"message": "How do I change my plan from monthly to annual billing?"}, "expect": {"refund_request": false, "queue": "billing", "urgency": "normal"}}
+{"id": "dt-004", "state": {"message": "The app crashes every time I open the reports tab. This is the third time I'm writing in."}, "expect": {"refund_request": false, "queue": "technical", "urgency": "high"}}
+{"id": "dt-005", "state": {"message": "The webhook signature check fails with error 401 after the update, so our events are currently not being delivered."}, "expect": {"refund_request": false, "queue": "technical", "urgency": "high"}}
+{"id": "dt-006", "state": {"message": "Invoice #8812 has the wrong VAT number. Please correct it at your earliest convenience."}, "expect": {"refund_request": false, "queue": "billing", "urgency": "low"}}
+{"id": "dt-007", "state": {"message": "Refund my order right now or I am disputing the charge with my bank."}, "expect": {"refund_request": true, "queue": "billing", "urgency": "high"}}
+{"id": "dt-008", "state": {"message": "Where can I find the API documentation for the bulk import endpoint?"}, "expect": {"refund_request": false, "queue": "other", "urgency": "low"}}
+{"id": "dt-009", "state": {"message": "Your latest update broke SSO for all of our users. Please revert it immediately."}, "expect": {"refund_request": false, "queue": "technical", "urgency": "high"}}
+{"id": "dt-010", "state": {"message": "Just wanted to say the new export feature is great. No action needed."}, "expect": {"refund_request": false, "queue": "other", "urgency": "low"}}
