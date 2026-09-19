@@ -14,18 +14,20 @@ def render_markdown(
     gates: list[GateResult],
     suggestion: ThresholdSuggestion | None = None,
     target_precision: float | None = None,
+    recorded_models: list[str] | None = None,
 ) -> str:
     lines: list[str] = []
     lines.append(f"# jevassert report — {pack.id} v{pack.version}")
     lines.append("")
-    lines.append(
-        f"- model: `{pack.record_model}`"
-        + (
-            f" (recorded against `{pack.tested}`)"
-            if pack.tested
-            else " (provisional — no pinned version)"
-        )
-    )
+    models = list(recorded_models or ([pack.tested] if pack.tested else []))
+    model_label = ", ".join(f"`{m}`" for m in models) if models else f"`{pack.record_model}`"
+    if models and pack.tested and models == [pack.tested]:
+        suffix = f" (recorded against `{pack.tested}`)"
+    elif pack.tested:
+        suffix = f" (pack pinned to `{pack.tested}`)"
+    else:
+        suffix = " (provisional — no pinned version)"
+    lines.append(f"- model: {model_label}{suffix}")
     lines.append(
         f"- cases: {overall.n_cases} ({overall.case_errors} errors, "
         f"{overall.missing_items} missing answers)"

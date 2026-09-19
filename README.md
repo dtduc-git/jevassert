@@ -38,6 +38,42 @@ uvx jevassert record examples/demo-triage -o triage-next.jsonl
 uvx jevassert compare examples/demo-triage --a triage.jsonl --b triage-next.jsonl
 ```
 
+## Benchmarking other backends
+
+The same pack, runner and metrics can record a **general-purpose LLM** instead
+of Jev, through TypeSafe's official
+[system-one-adapter](https://github.com/typesafe-ai/system-one-adapter-python):
+same questions, same golden cases, no TypeSafe key involved. This is how the
+`results/` baselines in [jev-packs](https://github.com/dtduc-git/jev-packs) are
+produced — one ground truth, several backends.
+
+```sh
+pip install 'jevassert[adapter]'   # optional extra; brings the provider SDKs
+
+# any OpenAI-compatible endpoint (Ollama, vLLM, gateways)
+uvx jevassert record packs/sms-spam -o sms-qwen.jsonl \
+  --backend openai --model qwen2.5:7b --base-url http://localhost:11434/v1
+
+# Claude (needs ANTHROPIC_API_KEY)
+uvx jevassert record packs/sms-spam -o sms-claude.jsonl \
+  --backend anthropic --model claude-haiku-4-5
+```
+
+Adapter recordings use structured outputs in probabilities mode, normalize the
+distributions and allow two corrective retries on malformed output — the same
+settings for every LLM backend, so comparisons are like for like. Cost is
+priced at `check` time, not record time:
+
+```sh
+# self-hosted endpoint: free
+uvx jevassert check packs/sms-spam -p sms-qwen.jsonl --input-price 0 --output-price 0
+# hosted API at list price
+uvx jevassert check packs/sms-spam -p sms-claude.jsonl --input-price 1 --output-price 5
+```
+
+`check` reports the models actually present in the recording (not the pack's
+pinned version) and prices both input and output tokens.
+
 ## Packs
 
 A pack follows **spec v0** (canonical:
@@ -125,8 +161,8 @@ the Action enforces the gates on every pull request.
 
 | command | what it does |
 |---|---|
-| `jevassert record PACK -o FILE [--model M] [--resume] [--rpm N] [--dry-run] [--shuffle-options SEED] [--repeat N]` | call Jev for every case, write predictions JSONL |
-| `jevassert check PACK -p FILE [--failures] [--bootstrap N] [--target-precision P] [--partition dev\|test]` | compute metrics, evaluate gates, exit 0/1/2 |
+| `jevassert record PACK -o FILE [--model M] [--backend typesafe\|openai\|anthropic] [--base-url URL] [--resume] [--rpm N] [--dry-run] [--shuffle-options SEED] [--repeat N]` | call the backend for every case, write predictions JSONL |
+| `jevassert check PACK -p FILE [--failures] [--bootstrap N] [--target-precision P] [--input-price X] [--output-price Y] [--partition dev\|test]` | compute metrics, evaluate gates, exit 0/1/2 |
 | `jevassert compare PACK --a A --b B` | paired accuracy deltas + exact McNemar p-value |
 
 `record` extras: `--dry-run` estimates tokens/cost from the pack without sending
@@ -141,7 +177,9 @@ decision count across rounds.
 on test without fooling yourself.
 
 Environment: `TYPESAFE_API_KEY` (record only), `TYPESAFE_BASE_URL` (override
-the endpoint, e.g. a local Jev-compatible replica).
+the endpoint, e.g. a local Jev-compatible replica), `OPENAI_API_KEY` (only when
+the `openai` adapter backend points at a hosted endpoint), `ANTHROPIC_API_KEY`
+(`anthropic` adapter backend).
 
 ## Reading the numbers
 

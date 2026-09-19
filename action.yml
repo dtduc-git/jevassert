@@ -25,6 +25,14 @@ inputs:
     description: Where to write the markdown report (empty = skip)
     required: false
     default: ""
+  input-price:
+    description: USD per million input tokens for the cost line (default 0.042, Jev list price)
+    required: false
+    default: ""
+  output-price:
+    description: USD per million output tokens for the cost line (default 0 = free)
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -39,6 +47,8 @@ runs:
         JUNIT: ${{ inputs.junit }}
         REPORT: ${{ inputs.report }}
         VERSION: ${{ inputs.version }}
+        INPUT_PRICE: ${{ inputs.input-price }}
+        OUTPUT_PRICE: ${{ inputs.output-price }}
       run: |
         if [ "$VERSION" = "latest" ]; then
           package="jevassert"
@@ -48,5 +58,11 @@ runs:
         args=(check "$PACK" -p "$PREDICTIONS" --junit "$JUNIT")
         if [ -n "$REPORT" ]; then
           args+=(--report "$REPORT")
+        fi
+        if [ -n "$INPUT_PRICE" ]; then
+          args+=(--input-price "$INPUT_PRICE")
+        fi
+        if [ -n "$OUTPUT_PRICE" ]; then
+          args+=(--output-price "$OUTPUT_PRICE")
         fi
         uvx "$package" "${args[@]}"

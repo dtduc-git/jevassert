@@ -13,11 +13,16 @@ Public repo: https://github.com/dtduc-git/jevassert · Apache-2.0.
 - `src/jevassert/client.py` — one HTTP client for `/v1/systemone`, retries on
   429/5xx, injectable transport. The API key comes from `TYPESAFE_API_KEY`
   only; never accept literal keys on the CLI, never log them.
+- `src/jevassert/backends.py` — `AdapterClient`: same interface, but records a
+  general-purpose LLM through the official `system-one-adapter`
+  (`--backend openai|anthropic`, optional extra `jevassert[adapter]`). Used by
+  the jev-packs benchmark; maps adapter errors onto `JevError` (auth fail-fast).
 - `src/jevassert/runner.py` — `record` (concurrent, per-case, `model=` override)
   and predictions JSONL read/write. One line per case, stable case order.
 - `src/jevassert/metrics.py` — items, accuracy, ECE (equal-mass bins), Brier
-  (Noul), coverage table, author-threshold coverage, cost/latency, gates.
-  Definitions are in the module docstring — keep them.
+  (Noul), coverage table, author-threshold coverage, cost/latency (prices
+  injectable for non-Jev backends), gates. Definitions are in the module
+  docstring — keep them.
 - `src/jevassert/compare.py` — paired comparison + exact McNemar (no scipy).
 - `src/jevassert/report.py` — markdown report (spec `evidence.md`) + JUnit XML.
 - `src/jevassert/cli.py` — `record | check | compare`, exit 0/1/2. `check`
@@ -70,3 +75,7 @@ Reconcile with SPEC was done 2026-09-19. Status:
 9. ~~Publish: GitHub repo + push~~ done 2026-09-19; ~~PyPI trusted publisher +
    `v0.1.0` release~~ done (PyPI `jevassert` 0.1.0, `uvx jevassert` verified).
    Action Marketplace listing still open.
+10. **0.2.0 (unreleased)**: adapter backends (`--backend openai|anthropic`),
+    `check --input-price/--output-price`, reports the recorded models instead
+    of `pack.recorded_model`, action.yml price inputs + optional `[adapter]`
+    extra. Release before merging jev-packs result columns (CI pins 0.2.0).

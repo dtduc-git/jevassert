@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
+from .backends import AdapterClient
 from .client import JevClient, JevError
 from .compare import CompareResult
 from .compare import compare as compare_recordings
@@ -61,7 +62,21 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="model version to record (default: pack.tested or jev-latest)",
     )
-    record_parser.add_argument("--base-url", default=None, help="override TYPESAFE_BASE_URL")
+    record_parser.add_argument(
+        "--backend",
+        choices=("typesafe", "openai", "anthropic", "bedrock"),
+        default="typesafe",
+        help="typesafe = TypeSafe API; openai = any OpenAI-compatible endpoint "
+        "(--base-url, e.g. Ollama); anthropic = Claude API; bedrock = Claude via "
+        "AWS Bedrock (AWS_PROFILE/AWS_REGION, use an inference profile id). The "
+        "last three go through system-one-adapter (pip install 'jevassert[adapter]') "
+        "and require --model",
+    )
+    record_parser.add_argument(
+        "--base-url",
+        default=None,
+        help="override TYPESAFE_BASE_URL (or the OpenAI-compatible endpoint for --backend openai)",
+    )
     record_parser.add_argument(
         "--resume",
         action="store_true",
@@ -114,6 +129,18 @@ def _build_parser() -> argparse.ArgumentParser:
         help="suggest the highest-coverage threshold that reaches this precision",
     )
     check_parser.add_argument(
+        "--input-price",
+        type=float,
+        default=INPUT_USD_PER_MTOK,
+        help=f"USD per million input tokens (default {INPUT_USD_PER_MTOK}, the Jev list price)",
+    )
+    check_parser.add_argument(
+        "--output-price",
+        type=float,
+        default=0.0,
+        help="USD per million output tokens (default 0: Jev output tokens are free)",
+    )
+    check_parser.add_argument(
         "--partition",
         choices=("all", "dev", "test"),
         default="all",
@@ -154,7 +181,13 @@ def _cmd_record(args: argparse.Namespace) -> int:
         print("jevassert: error: --repeat must be >= 1", file=sys.stderr)
         return 2
 
-    client = JevClient(base_url=args.base_url)
+    if args.backend == "typesafe":
+        client: JevClient | AdapterClient = JevClient(base_url=args.base_url)
+    else:
+        if not args.model:
+            print(f"jevassert: error: --backend {args.backend} requires --model", file=sys.stderr)
+            return 2
+        client = AdapterClient(args.backend, args.model, base_url=args.base_url)
     base_out = Path(args.out)
     total_errors = 0
     try:
@@ -254,27 +287,48 @@ def _cmd_check(args: argparse.Namespace) -> int:
             f"(seed {args.partition_seed}, ratio {args.partition_ratio})",
             file=sys.stderr,
         )
-    overall = compute(pack, predictions, bootstrap=args.bootstrap)
+    overall = compute(
+        pack,
+        predictions,
+        bootstrap=args.bootstrap,
+        input_usd_per_mtok=args.input_price,
+        output_usd_per_mtok=args.output_price,
+    )
     gates = evaluate_gates(pack, overall)
     suggestion = None
     if args.target_precision is not None:
         items, _, _ = build_items(pack, predictions)
         suggestion = suggest_threshold(items, args.target_precision)
+    models = _recorded_models(predictions)
 
     if args.junit:
         Path(args.junit).write_text(render_junit(pack, gates), encoding="utf-8")
     if args.report:
         Path(args.report).write_text(
-            render_markdown(pack, overall, gates, suggestion, args.target_precision),
+            render_markdown(pack, overall, gates, suggestion, args.target_precision, models),
             encoding="utf-8",
         )
 
     if args.json:
-        print(json.dumps(_payload(pack, overall, gates, suggestion), indent=2, ensure_ascii=False))
+        payload = _payload(pack, overall, gates, suggestion)
+        payload["recorded_models"] = models
+        payload["pricing"] = {
+            "input_usd_per_mtok": args.input_price,
+            "output_usd_per_mtok": args.output_price,
+        }
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
     else:
         print(
             _human_summary(
-                pack, overall, gates, args.predictions, suggestion, args.target_precision
+                pack,
+                overall,
+                gates,
+                args.predictions,
+                suggestion,
+                args.target_precision,
+                models,
+                args.input_price,
+                args.output_price,
             )
         )
         if args.failures:
@@ -414,6 +468,12 @@ def _payload(
     }
 
 
+def _recorded_models(predictions: dict[str, dict[str, Any]]) -> list[str]:
+    return sorted(
+        {record["model"] for record in predictions.values() if isinstance(record.get("model"), str)}
+    )
+
+
 def _human_summary(
     pack: Pack,
     overall: OverallMetrics,
@@ -421,12 +481,14 @@ def _human_summary(
     predictions_path: str,
     suggestion: ThresholdSuggestion | None = None,
     target_precision: float | None = None,
+    models: list[str] | None = None,
+    input_price: float = INPUT_USD_PER_MTOK,
+    output_price: float = 0.0,
 ) -> str:
     lines: list[str] = []
     tested = f", tested {pack.tested}" if pack.tested else ", provisional"
-    lines.append(
-        f"jevassert — {pack.id} v{pack.version} (record model {pack.record_model}{tested})"
-    )
+    record_model = ", ".join(models) if models else pack.record_model
+    lines.append(f"jevassert — {pack.id} v{pack.version} (record model {record_model}{tested})")
     lines.append(
         f"recording: {predictions_path} — {overall.n_cases} cases, "
         f"{overall.case_errors} errors, {overall.missing_items} missing, {overall.n_items} items"
@@ -457,9 +519,12 @@ def _human_summary(
             "(see README: Reading the numbers)"
         )
     if overall.cost_per_case_usd is not None:
+        price = f"${input_price}/M input tokens"
+        if output_price:
+            price = f"${input_price}/M input + ${output_price}/M output tokens"
         lines.append(
             f"cost/case ${overall.cost_per_case_usd:.6f} "
-            f"(total ${overall.total_cost_usd:.4f} at ${0.042}/M input tokens)"
+            f"(total ${overall.total_cost_usd:.4f} at {price})"
         )
     if overall.p95_latency_ms is not None:
         lines.append(

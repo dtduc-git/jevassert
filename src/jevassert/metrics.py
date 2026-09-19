@@ -207,6 +207,8 @@ def compute(
     predictions: dict[str, dict[str, Any]],
     bootstrap: int = 1000,
     seed: int = 0,
+    input_usd_per_mtok: float = INPUT_USD_PER_MTOK,
+    output_usd_per_mtok: float = 0.0,
 ) -> OverallMetrics:
     items, case_errors, missing_items = build_items(pack, predictions)
 
@@ -249,18 +251,27 @@ def compute(
     all_correct = [item.correct for item in items]
 
     total_input_tokens = 0
+    total_output_tokens = 0
     saw_usage = False
     latencies: list[float] = []
     for case in pack.cases:
         record = predictions.get(case.id) or {}
         usage = record.get("usage")
-        if isinstance(usage, dict) and isinstance(usage.get("input_tokens"), int | float):
-            total_input_tokens += int(usage["input_tokens"])
-            saw_usage = True
+        if isinstance(usage, dict):
+            if isinstance(usage.get("input_tokens"), int | float):
+                total_input_tokens += int(usage["input_tokens"])
+                saw_usage = True
+            if isinstance(usage.get("output_tokens"), int | float):
+                total_output_tokens += int(usage["output_tokens"])
         if isinstance(record.get("latency_ms"), int | float):
             latencies.append(float(record["latency_ms"]))
 
-    total_cost = (total_input_tokens * INPUT_USD_PER_MTOK / 1_000_000) if saw_usage else None
+    total_cost = (
+        (total_input_tokens * input_usd_per_mtok + total_output_tokens * output_usd_per_mtok)
+        / 1_000_000
+        if saw_usage
+        else None
+    )
     cost_per_case = (total_cost / len(pack.cases)) if total_cost is not None else None
 
     return OverallMetrics(
