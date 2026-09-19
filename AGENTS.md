@@ -75,7 +75,8 @@ Reconcile with SPEC was done 2026-09-19. Status:
 9. ~~Publish: GitHub repo + push~~ done 2026-09-19; ~~PyPI trusted publisher +
    `v0.1.0` release~~ done (PyPI `jevassert` 0.1.0, `uvx jevassert` verified).
    Action Marketplace listing still open.
-10. **0.2.0 (unreleased)**: adapter backends (`--backend openai|anthropic`),
-    `check --input-price/--output-price`, reports the recorded models instead
-    of `pack.recorded_model`, action.yml price inputs + optional `[adapter]`
-    extra. Release before merging jev-packs result columns (CI pins 0.2.0).
+10. **0.2.0 released 2026-09-19** (PyPI + tag + Release): adapter backends
+    (`--backend openai|anthropic|bedrock`), `check --input-price/--output-price`,
+    reports the recorded models, action.yml price inputs, `[adapter]` extra.
+    `v0` tag still points at 0.1.0 — move it to 0.2.0 only after confirming the
+    Action works on the new tag.
