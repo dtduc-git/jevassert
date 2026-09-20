@@ -1,7 +1,7 @@
 name: jevassert
 description: >-
-  Gate accuracy, calibration and cost for Jev question packs — runs on a
-  recording made with `jevassert record`, so CI is deterministic and free.
+  Fail CI when a Jev question pack regresses: accuracy, calibration and cost
+  gates, replayed offline.
 branding:
   icon: check-circle
   color: purple
