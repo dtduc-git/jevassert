@@ -15,6 +15,7 @@ def render_markdown(
     suggestion: ThresholdSuggestion | None = None,
     target_precision: float | None = None,
     recorded_models: list[str] | None = None,
+    gates_skipped: bool = False,
 ) -> str:
     lines: list[str] = []
     lines.append(f"# jevassert report — {pack.id} v{pack.version}")
@@ -86,7 +87,9 @@ def render_markdown(
     lines.append("")
     lines.append("## Gates")
     lines.append("")
-    if not gates:
+    if gates_skipped:
+        lines.append("Gates skipped (`--no-gates`).")
+    elif not gates:
         lines.append("No gates declared in gates.yaml.")
     for gate in gates:
         mark = "PASS" if gate.ok else ("SKIP" if gate.ok is None else "FAIL")
@@ -104,10 +107,15 @@ def _question_row(metrics: QuestionMetrics) -> str:
     )
 
 
-def render_junit(pack: Pack, gates: list[GateResult]) -> str:
+def render_junit(pack: Pack, gates: list[GateResult], gates_skipped: bool = False) -> str:
     classname = quoteattr(f"jevassert.{pack.id}")
     cases = []
     failures = 0
+    if gates_skipped:
+        cases.append(
+            f'  <testcase name="gates" classname={classname}>'
+            '<skipped message="--no-gates"/></testcase>'
+        )
     for gate in gates:
         if gate.ok is False:
             failures += 1
@@ -124,7 +132,7 @@ def render_junit(pack: Pack, gates: list[GateResult]) -> str:
     body = "\n".join(cases)
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
-        f'<testsuite name={quoteattr(pack.id)} tests="{len(gates)}" failures="{failures}">\n'
+        f'<testsuite name={quoteattr(pack.id)} tests="{len(cases)}" failures="{failures}">\n'
         f"{body}\n</testsuite>\n"
     )
 

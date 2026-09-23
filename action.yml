@@ -33,6 +33,10 @@ inputs:
     description: USD per million output tokens for the cost line (default 0 = free)
     required: false
     default: ""
+  no-gates:
+    description: Set to "true" to skip gates.yaml entirely (metrics/report only, always exit 0)
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -49,6 +53,7 @@ runs:
         VERSION: ${{ inputs.version }}
         INPUT_PRICE: ${{ inputs.input-price }}
         OUTPUT_PRICE: ${{ inputs.output-price }}
+        NO_GATES: ${{ inputs.no-gates }}
       run: |
         if [ "$VERSION" = "latest" ]; then
           package="jevassert"
@@ -64,5 +69,8 @@ runs:
         fi
         if [ -n "$OUTPUT_PRICE" ]; then
           args+=(--output-price "$OUTPUT_PRICE")
+        fi
+        if [ "$NO_GATES" = "true" ]; then
+          args+=(--no-gates)
         fi
         uvx "$package" "${args[@]}"

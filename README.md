@@ -155,14 +155,16 @@ Exit codes: `0` all gates pass, `1` a gate failed, `2` usage/IO error.
 ```
 
 Record outside CI (or as a scheduled job), commit the predictions file, and
-the Action enforces the gates on every pull request.
+the Action enforces the gates on every pull request. The Action exposes
+`input-price`, `output-price` and `no-gates` (`"true"` skips `gates.yaml`,
+always exit 0); other `check` flags stay CLI-only for now.
 
 ## Commands
 
 | command | what it does |
 |---|---|
 | `jevassert record PACK -o FILE [--model M] [--backend typesafe\|openai\|anthropic] [--base-url URL] [--resume] [--rpm N] [--dry-run] [--shuffle-options SEED] [--repeat N]` | call the backend for every case, write predictions JSONL |
-| `jevassert check PACK -p FILE [--failures] [--bootstrap N] [--target-precision P] [--input-price X] [--output-price Y] [--partition dev\|test]` | compute metrics, evaluate gates, exit 0/1/2 |
+| `jevassert check PACK -p FILE [--failures] [--bootstrap N] [--target-precision P] [--input-price X] [--output-price Y] [--partition dev\|test] [--no-gates]` | compute metrics, evaluate gates, exit 0/1/2 |
 | `jevassert compare PACK --a A --b B` | paired accuracy deltas + exact McNemar p-value |
 
 `record` extras: `--dry-run` estimates tokens/cost from the pack without sending
@@ -171,6 +173,10 @@ anything; `--resume` retries only cases that errored; `--rpm` paces requests;
 (Score levels stay ordinal) — compare it against the base recording; `--repeat N`
 records N independent rounds (`FILE-r2.jsonl`, ...) and prints the discordant
 decision count across rounds.
+
+`check --no-gates` skips `gates.yaml` entirely — metrics and report only, always
+exit 0. Use it for benchmark replays that must not be judged by the pack's
+reference contract (the report and JSON mark the gates as skipped).
 
 `check --partition dev|test` evaluates only one deterministic hash-split half
 (`--partition-seed`, `--partition-ratio`) — tune thresholds on dev, then verify

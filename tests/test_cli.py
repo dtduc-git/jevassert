@@ -109,6 +109,50 @@ def test_check_writes_junit_and_report(tmp_path: Path) -> None:
     assert "jevassert report — test-pack" in report.read_text(encoding="utf-8")
 
 
+def test_check_no_gates_skips_failing_gates(tmp_path: Path, capsys) -> None:
+    report = tmp_path / "no-gates.md"
+    junit = tmp_path / "no-gates.xml"
+    code = cli.main(
+        [
+            "check",
+            str(make_pack(tmp_path)),
+            "-p",
+            str(bad_predictions(tmp_path)),
+            "--report",
+            str(report),
+            "--junit",
+            str(junit),
+            "--no-gates",
+        ]
+    )
+    out = capsys.readouterr().out
+    assert code == 0  # gates.yaml would fail min_accuracy
+    assert "(skipped: --no-gates)" in out
+    assert "FAIL" not in out
+    assert "Gates skipped (`--no-gates`)." in report.read_text(encoding="utf-8")
+    suite = ET.parse(junit).getroot()
+    assert suite.attrib["tests"] == "1"
+    assert suite.attrib["failures"] == "0"
+    assert suite.find("testcase/skipped").attrib["message"] == "--no-gates"
+
+
+def test_check_no_gates_json_marks_skipped(tmp_path: Path, capsys) -> None:
+    code = cli.main(
+        [
+            "check",
+            str(make_pack(tmp_path)),
+            "-p",
+            str(bad_predictions(tmp_path)),
+            "--json",
+            "--no-gates",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert code == 0
+    assert payload["gates"] == []
+    assert payload["gates_skipped"] is True
+
+
 def test_check_json_output(tmp_path: Path, capsys) -> None:
     code = cli.main(
         [

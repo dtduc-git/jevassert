@@ -141,6 +141,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="USD per million output tokens (default 0: Jev output tokens are free)",
     )
     check_parser.add_argument(
+        "--no-gates",
+        action="store_true",
+        help="skip gates.yaml entirely: metrics and report only, always exit 0 "
+        "(for benchmarks and replays that must not enforce pack gates)",
+    )
+    check_parser.add_argument(
         "--partition",
         choices=("all", "dev", "test"),
         default="all",
@@ -294,7 +300,7 @@ def _cmd_check(args: argparse.Namespace) -> int:
         input_usd_per_mtok=args.input_price,
         output_usd_per_mtok=args.output_price,
     )
-    gates = evaluate_gates(pack, overall)
+    gates = [] if args.no_gates else evaluate_gates(pack, overall)
     suggestion = None
     if args.target_precision is not None:
         items, _, _ = build_items(pack, predictions)
@@ -302,15 +308,17 @@ def _cmd_check(args: argparse.Namespace) -> int:
     models = _recorded_models(predictions)
 
     if args.junit:
-        Path(args.junit).write_text(render_junit(pack, gates), encoding="utf-8")
+        Path(args.junit).write_text(render_junit(pack, gates, args.no_gates), encoding="utf-8")
     if args.report:
         Path(args.report).write_text(
-            render_markdown(pack, overall, gates, suggestion, args.target_precision, models),
+            render_markdown(
+                pack, overall, gates, suggestion, args.target_precision, models, args.no_gates
+            ),
             encoding="utf-8",
         )
 
     if args.json:
-        payload = _payload(pack, overall, gates, suggestion)
+        payload = _payload(pack, overall, gates, suggestion, gates_skipped=args.no_gates)
         payload["recorded_models"] = models
         payload["pricing"] = {
             "input_usd_per_mtok": args.input_price,
@@ -329,6 +337,7 @@ def _cmd_check(args: argparse.Namespace) -> int:
                 models,
                 args.input_price,
                 args.output_price,
+                gates_skipped=args.no_gates,
             )
         )
         if args.failures:
@@ -405,6 +414,8 @@ def _payload(
     overall: OverallMetrics,
     gates: list[Any],
     suggestion: ThresholdSuggestion | None = None,
+    *,
+    gates_skipped: bool = False,
 ) -> dict[str, Any]:
     return {
         "pack": pack.id,
@@ -465,6 +476,7 @@ def _payload(
             else None
         ),
         "gates": [{"gate": gate.gate, "ok": gate.ok, "detail": gate.detail} for gate in gates],
+        "gates_skipped": gates_skipped,
     }
 
 
@@ -484,6 +496,8 @@ def _human_summary(
     models: list[str] | None = None,
     input_price: float = INPUT_USD_PER_MTOK,
     output_price: float = 0.0,
+    *,
+    gates_skipped: bool = False,
 ) -> str:
     lines: list[str] = []
     tested = f", tested {pack.tested}" if pack.tested else ", provisional"
@@ -554,7 +568,9 @@ def _human_summary(
         )
     lines.append("")
     lines.append("gates:")
-    if not gates:
+    if gates_skipped:
+        lines.append("  (skipped: --no-gates)")
+    elif not gates:
         lines.append("  (none declared in gates.yaml)")
     for gate in gates:
         mark = "PASS" if gate.ok else ("SKIP" if gate.ok is None else "FAIL")
