@@ -78,5 +78,9 @@ Reconcile with SPEC was done 2026-09-19. Status:
 10. **0.2.0 released 2026-09-19** (PyPI + tag + Release): adapter backends
     (`--backend openai|anthropic|bedrock`), `check --input-price/--output-price`,
     reports the recorded models, action.yml price inputs, `[adapter]` extra.
-    `v0` tag still points at 0.1.0 — move it to 0.2.0 only after confirming the
-    Action works on the new tag.
+11. **0.2.1 (this release)**: `check --no-gates` skips `gates.yaml` entirely —
+    no parsing, no validation, no evaluation (metrics/report only, always exit
+    0); human summary, markdown report, JSON and JUnit all mark the skip;
+    Action input `no-gates` (case-insensitive, requires version >= 0.2.1).
+    Next: jev-packs replaces its symlink workaround and bumps its pin to
+    v0.2.1, then move the `v0` tag (still at 0.1.0) to the new release.

@@ -127,7 +127,7 @@ class Pack:
         return set(question["levels"])
 
 
-def load_pack(path: str | Path, *, require_cases: bool = True) -> Pack:
+def load_pack(path: str | Path, *, require_cases: bool = True, skip_gates: bool = False) -> Pack:
     """Load and validate a pack directory (or a direct path to pack.yaml).
 
     Registry packs must carry golden cases (SPEC.md); consumers that classify
@@ -168,7 +168,7 @@ def load_pack(path: str | Path, *, require_cases: bool = True) -> Pack:
     state = _validate_state(raw.get("state"), pack_file)
     questions = _validate_questions(raw.get("questions"), pack_file)
     thresholds = _validate_thresholds(raw.get("thresholds"), questions, pack_file)
-    gates = _load_gates(pack_dir, questions)
+    gates = {} if skip_gates else _load_gates(pack_dir, questions)
     cases_file = pack_dir / "cases.jsonl"
     cases = _load_cases(cases_file, state, questions, pack_file) if cases_file.is_file() else ()
     if require_cases and not cases:

@@ -153,6 +153,16 @@ def test_check_no_gates_json_marks_skipped(tmp_path: Path, capsys) -> None:
     assert payload["gates_skipped"] is True
 
 
+def test_check_no_gates_ignores_invalid_gates_file(tmp_path: Path, capsys) -> None:
+    pack_dir = make_pack(tmp_path)
+    (pack_dir / "gates.yaml").write_text("min_accuracy: not-a-number\n", encoding="utf-8")
+    code = cli.main(["check", str(pack_dir), "-p", str(good_predictions(tmp_path)), "--no-gates"])
+    assert code == 0
+    capsys.readouterr()
+    code_bad = cli.main(["check", str(pack_dir), "-p", str(good_predictions(tmp_path))])
+    assert code_bad == 2
+
+
 def test_check_json_output(tmp_path: Path, capsys) -> None:
     code = cli.main(
         [

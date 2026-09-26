@@ -279,7 +279,7 @@ def _estimate_tokens(pack: Pack, limit: int | None) -> tuple[int, int]:
 
 
 def _cmd_check(args: argparse.Namespace) -> int:
-    pack = load_pack(args.pack)
+    pack = load_pack(args.pack, skip_gates=args.no_gates)
     predictions = load_predictions(args.predictions)
     _warn_on_recording_mismatch(pack, predictions)
     if args.partition != "all":
